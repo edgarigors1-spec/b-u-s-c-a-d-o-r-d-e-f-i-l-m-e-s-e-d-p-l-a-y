@@ -1,1 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Filmes EDPLAY</title>
 
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #101014;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      text-align: center;
+      margin: 20px 0 30px;
+    }
+
+    h1 {
+      color: #00aaff;
+      font-size: 28px;
+    }
+
+    header p {
+      color: #bbb;
+    }
+
+    .pesquisa {
+      display: flex;
+      gap: 8px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #008cff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #mensagem {
+      text-align: center;
+      margin: 25px 0;
+      color: #ccc;
+    }
+
+    #resultados {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fit, minmax(140px, 1fr)
+      );
+      gap: 16px;
+      max-width: 1000px;
+      margin: 25px auto;
+    }
+
+    .filme {
+      background: #202027;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .filme img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 2 / 3;
+      object-fit: cover;
+    }
+
+    .detalhes {
+      padding: 10px;
+    }
+
+    .detalhes h2 {
+      font-size: 15px;
+      margin: 0 0 8px;
+    }
+
+    .detalhes p {
+      font-size: 13px;
+      color: #ccc;
+      line-height: 1.4;
+    }
+
+    footer {
+      text-align: center;
+      color: #777;
+      margin-top: 40px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>EDPLAY</h1>
+    <p>Buscador de Filmes e Séries</p>
+  </header>
+
+  <form class="pesquisa" id="formulario">
+    <input
+      id="consulta"
+      type="search"
+      placeholder="Digite o nome do filme..."
+      required
+    >
+    <button type="submit">Buscar</button>
+  </form>
+
+  <p id="mensagem">
+    Digite o nome de um filme para pesquisar.
+  </p>
+
+  <main id="resultados"></main>
+
+  <footer>
+    EDPLAY — Seu buscador de filmes
+  </footer>
+
+  <script>
+    const formulario = document.getElementById("formulario");
+    const consulta = document.getElementById("consulta");
+    const resultados = document.getElementById("resultados");
+    const mensagem = document.getElementById("mensagem");
+
+    formulario.addEventListener("submit", async function(evento) {
+      evento.preventDefault();
+
+      const nome = consulta.value.trim();
+
+      if (!nome) return;
+
+      resultados.innerHTML = "";
+      mensagem.textContent = "Pesquisando filmes...";
+
+      try {
+        const resposta = await fetch(
+          "https://api.themoviedb.org/3/search/movie?api_key=SUA_CHAVE_API&language=pt-BR&query=" +
+          encodeURIComponent(nome)
+        );
+
+        if (!resposta.ok) {
+          throw new Error("Não foi possível consultar a API.");
+        }
+
+        const dados = await resposta.json();
+
+        if (!dados.results || dados.results.length === 0) {
+          mensagem.textContent = "Nenhum filme encontrado.";
+          return;
+        }
+
+        mensagem.textContent =
+          dados.results.length + " resultado(s) encontrado(s).";
+
+        dados.results.forEach(function(filme) {
+          const cartao = document.createElement("article");
+          cartao.className = "filme";
+
+          const imagem = document.createElement("img");
+
+          imagem.alt = filme.title || "Capa do filme";
+          imagem.src = filme.poster_path
+            ? "https://image.tmdb.org/t/p/w500" + filme.poster_path
+            : "";
+
+          if (!filme.poster_path) {
+            imagem.alt = "Capa indisponível";
+          }
+
+          const detalhes = document.createElement("div");
+          detalhes.className = "detalhes";
+
+          const titulo = document.createElement("h2");
+          titulo.textContent = filme.title || "Título desconhecido";
+
+          const ano = document.createElement("p");
+          ano.textContent = filme.release_date
+            ? "Ano: " + filme.release_date.slice(0, 4)
+            : "Ano não informado";
+
+          const resumo = document.createElement("p");
+          resumo.textContent = filme.overview
+            ? filme.overview
+            : "Sinopse não disponível.";
+
+          detalhes.append(titulo, ano, resumo);
+          cartao.append(imagem, detalhes);
+          resultados.appendChild(cartao);
+        });
+
+      } catch (erro) {
+        mensagem.textContent =
+          "A página está pronta, mas precisamos configurar a API de filmes para pesquisar.";
+      }
+    });
+  </script>
+
+</body>
+</html>
